@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".MainActivity"
+    tools:showIn="@layout/app_bar_main"
+    android:orientation="vertical"
+    android:weightSum="1">
+<android.support.v7.widget.CardView
+    android:id="@+id/cardViewHT"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:elevation="100dp"
+    android:layout_marginTop="15dp"
+    card_view:cardBackgroundColor="@color/cardView_initial_background"
+    card_view:cardCornerRadius="5dp">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Enter Height"
+        android:id="@+id/textViewHT"
+        android:paddingTop="10dp" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/htSpinner"
+        android:spinnerMode="dialog"
+        android:textAlignment="center"
+        android:paddingTop="60dp"
+        android:paddingBottom="20dp" />
+
+
+</android.support.v7.widget.CardView>
+
+    <android.support.v7.widget.CardView
+        android:id="@+id/cardViewWT"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:elevation="100dp"
+        android:layout_marginTop="15dp"
+        card_view:cardBackgroundColor="@color/cardView_initial_background"
+        card_view:cardCornerRadius="5dp">
+
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Enter Weight"
+                android:id="@+id/textViewWT"
+                android:paddingTop="10dp" />
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <SeekBar
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/wtSeek"
+                        android:progress="25"
+                        android:layout_weight="10"
+                        android:paddingTop="20dp"
+                        android:paddingBottom="20dp"
+                        android:longClickable="false"
+                        android:indeterminateOnly="false"
+                        android:indeterminate="false" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="55 Kg"
+                        android:layout_weight="1"
+                        android:id="@+id/textViewWTIndicator"
+                        android:paddingTop="20dp" />
+
+                </LinearLayout>
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
+
+
+
+</LinearLayout>
