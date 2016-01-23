@@ -11,6 +11,6 @@
     <string name="main_activity_label">Main Activity</string>
     <string name="title_activity_splash_screen">SplashScreenActivity</string>
 
-    <string name="predictor_base_url">http://127.0.0.1:8080/genPredict/webresources/myresource/predictor/</string>
-    <string name="feedData_base_url">http://127.0.0.1:8080/genPredict/webresources/myresource/feed/</string>
+    <string name="predictor_base_url">http://whatru-svietacm.rhcloud.com/API/predictor?</string>
+    <string name="feedData_base_url">http://whatru-svietacm.rhcloud.com/API/feed?</string>
 </resources>

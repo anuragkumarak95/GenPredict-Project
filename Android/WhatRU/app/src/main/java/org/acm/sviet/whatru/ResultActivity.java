@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,7 +24,6 @@ import cz.msebera.android.httpclient.Header;
 public class ResultActivity extends AppCompatActivity {
     /*TODO list:
     * -> Replace Gender TextView with an imageView and appropriately assign gender images to it.
-    *
     * */
 
     private TextView textViewgender;
@@ -81,10 +81,7 @@ public class ResultActivity extends AppCompatActivity {
                 Add code for uploading the gathered data for data set for true prediction. true condition.
                  */
                 Log.v(TAG, "The Prediction result is declared true by user, uploading for further data set expansion.");
-                //uploadBundle(bundle,true);
-                Intent intent = new Intent(ResultActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
+                uploadBundle(bundle, true);
             }
         });
 
@@ -96,10 +93,7 @@ public class ResultActivity extends AppCompatActivity {
                 Add code for uploading the gathered data with reversed gender value for data set for false prediction. false condition.
                  */
                 Log.v(TAG,"The Prediction result is declared false by user, uploading for further data set expansion.");
-                //uploadBundle(bundle,false);
-                Intent intent = new Intent(ResultActivity.this,MainActivity.class);
-                startActivity(intent);
-                finish();
+                uploadBundle(bundle, false);
             }
         });
     }
@@ -159,7 +153,13 @@ public class ResultActivity extends AppCompatActivity {
         // Make RESTful webservice call using AsyncHttpClient object
         AsyncHttpClient client = new AsyncHttpClient();
 
-        client.post(getResources().getString(R.string.feedData_base_url) + gender + "/" + ht + "/" + wt, null, new AsyncHttpResponseHandler() {
+        RequestParams requestParams = new RequestParams();
+        requestParams.add("gender",gender);
+        requestParams.add("ht",Double.toString(ht));
+        requestParams.add("wt",Double.toString(wt));
+
+
+        client.post(getResources().getString(R.string.feedData_base_url), requestParams, new AsyncHttpResponseHandler() {
 
 
             @Override
@@ -171,7 +171,7 @@ public class ResultActivity extends AppCompatActivity {
                     JSONObject obj = new JSONObject(response);
                     String err = obj.getString("error");
                     String status = obj.getString("status");
-                    if (err==null) {
+                    if (status.equals("DATA UPLOAD HEALTHY OK")) {
                         Log.d(TAG,"Upload Success Report : "+status);
                         Intent intent = new Intent(ResultActivity.this, MainActivity.class);
                         startActivity(intent);

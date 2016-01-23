@@ -75,7 +75,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
         Snackbar.make(mContentView,
                 getResources().getString(R.string.dev_note),
-                Snackbar.LENGTH_SHORT)
+                Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
     }
 
@@ -88,7 +88,7 @@ public class SplashScreenActivity extends AppCompatActivity {
         // are available.
         Log.v(TAG, "Activity post delay ended accurately. Welcome to WhatRU?");
         delayedHide(1);
-        splashEndHandler.postDelayed(splashEnd,3000);
+        splashEndHandler.postDelayed(splashEnd,4000);
     }
 
 

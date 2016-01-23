@@ -6,12 +6,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -26,12 +24,12 @@ import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -124,7 +122,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 Log.v(TAG, "FAB button clicked with all inputs properly selected. moving for further HTTPRequest.");
-                //connect(htValue, findWtBySeekBarProgress(wtBar.getProgress()));
+                connect(htValue, findWtBySeekBarProgress(wtBar.getProgress()));
 /*                Snackbar.make(view,"Height value Obtained : "+htValue+" || Weight Value Obtained : "+findWtBySeekBarProgress(wtBar.getProgress()),Snackbar.LENGTH_INDEFINITE)
                         .setAction("Dismiss", new View.OnClickListener() {
                             @Override
@@ -132,7 +130,6 @@ public class MainActivity extends AppCompatActivity
                                 //Do nothing.
                             }
                         }).show();*/
-                passOn("M", htValue, findWtBySeekBarProgress(wtBar.getProgress()), 0.75);
                             }
         });
         checkValuesSelectedState();
@@ -190,20 +187,21 @@ public class MainActivity extends AppCompatActivity
             Toast.makeText(getApplicationContext(),"Cluster Drawer Item Selected.",Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_gitfork) {
             Toast.makeText(getApplicationContext(),"GitFork Drawer Item Selected.",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),"API Link Drawer Item Selected.",Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("http://whatru-svietacm.rhcloud.com"));
+            startActivity(intent);
         } else if (id == R.id.nav_api) {
             Toast.makeText(getApplicationContext(),"API Link Drawer Item Selected.",Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("http://whatru-svietacm.rhcloud.com"));
+            startActivity(intent);
         } else if (id == R.id.nav_about) {
             Toast.makeText(getApplicationContext(),"Developer site Drawer Item Selected.",Toast.LENGTH_SHORT).show();
 
-            Intent intent = new Intent(Intent.CATEGORY_APP_BROWSER);
-            Uri uri =  Uri.parse("http://www.google.com").buildUpon().build();
-            intent.setData(uri);
-
-            if(intent.resolveActivity(getPackageManager())!=null){
-                startActivity(intent);
-            }else{
-                Log.e(TAG,"implicit intent resolving failure.");//TODO the intent is not resolving. find out how to start an implicit browser intent.
-            }
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("http://"+getResources().getString(R.string.web_add)));
+            startActivity(intent);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -217,7 +215,11 @@ public class MainActivity extends AppCompatActivity
         // Make RESTful webservice call using AsyncHttpClient object
         AsyncHttpClient client = new AsyncHttpClient();
 
-        client.get(getResources().getString(R.string.predictor_base_url) + ht + "/" + wt, null, new AsyncHttpResponseHandler() {
+        RequestParams requestParams = new RequestParams();
+        requestParams.add("ht",Double.toString(ht));
+        requestParams.add("wt",Double.toString(wt));
+
+        client.get(getResources().getString(R.string.predictor_base_url), requestParams, new AsyncHttpResponseHandler() {
 
 
             @Override
@@ -299,12 +301,14 @@ public class MainActivity extends AppCompatActivity
 
     private void checkValuesSelectedState(){
         if(!fab.isEnabled()) {
-            if (htSet == true && wtSet==true) {
+            if (htSet && wtSet) {
                 fab.setEnabled(true);
-
+                fab.setBackgroundTintList(getResources().getColorStateList(R.color.fab_enabled));
                 Log.d(TAG, "FAB button functionality enabled.");
             } else {
+
                 fab.setEnabled(false);
+                fab.setBackgroundTintList(getResources().getColorStateList(R.color.fab_disabled));
 
 
             }
