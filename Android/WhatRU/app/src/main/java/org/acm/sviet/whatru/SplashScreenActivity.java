@@ -2,6 +2,8 @@ package org.acm.sviet.whatru;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.Snackbar;
@@ -11,6 +13,10 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -19,8 +25,6 @@ import android.widget.Button;
 public class SplashScreenActivity extends AppCompatActivity {
 
     private final String TAG = "[SplashScreenActivity]";
-
-
     /**
      * Some older devices needs a small delay between UI widget updates
      * and a change of the status and navigation bar.
@@ -65,6 +69,9 @@ public class SplashScreenActivity extends AppCompatActivity {
         }
     };
 
+    private ImageView imageViewLogo;
+    private InputStream imageStream;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -73,6 +80,14 @@ public class SplashScreenActivity extends AppCompatActivity {
 
         mContentView = findViewById(R.id.fullscreen_content);
 
+        imageViewLogo = (ImageView)findViewById(R.id.imageViewLogo);
+        try {
+            imageStream = getAssets().open("images/splash_logo.png");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Bitmap splashBit = BitmapFactory.decodeStream(imageStream);
+        imageViewLogo.setImageBitmap(splashBit);
         Snackbar.make(mContentView,
                 getResources().getString(R.string.dev_note),
                 Snackbar.LENGTH_LONG)

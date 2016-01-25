@@ -25,9 +25,7 @@
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:id="@+id/imageViewLogo"
-        android:src="@drawable/ic_action_name"
-        android:layout_gravity="center"
-        android:layout_marginTop="0dp" />
+        android:layout_gravity="center" />
 
 
 </FrameLayout>

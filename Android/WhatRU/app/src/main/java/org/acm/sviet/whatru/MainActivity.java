@@ -1,26 +1,37 @@
 package org.acm.sviet.whatru;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewSwitcher;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -43,15 +54,25 @@ public class MainActivity extends AppCompatActivity
 *  -> Place a Weight current Value indicator and fill it. *done*
 *  -> find a way to indicate that fab is not enabled while ht and wt values are not established by the user.
 * */
-    private final String TAG="[MainActivity]";
+    private static final String TAG="[MainActivity]";
     ProgressDialog prgDialog = null;
     String message = null;
     SeekBar wtBar=  null;
     Spinner htSpin = null;
     double htValue = 0;
-    TextView textViewWTIndicator = null;
     boolean htSet = false,wtSet = false;
     FloatingActionButton fab = null;
+    TextSwitcher textSwitcher = null;
+    private Animation fabRollFromDownAnimation;
+    private Animation fabByeAnimation;
+
+    private Handler connectHandler = new Handler();
+    private Runnable connectRun;
+
+    // Whether there is a Wi-Fi connection.
+    private static boolean wifiConnected = false;
+    // Whether there is a mobile connection.
+    private static boolean mobileConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,26 +87,49 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         //Assigning needful assets.
-        textViewWTIndicator = (TextView) findViewById(R.id.textViewWTIndicator);
+
+        // Get the TextSwitcher view from the layout
+        textSwitcher = (TextSwitcher) findViewById(R.id.wttSwitcher);
+
+        // BEGIN_INCLUDE(setup)
+        // Set the factory used to create TextViews to switch between.
+        textSwitcher.setFactory(mFactory);
+
+        /*
+         * Set the in and out animations. Using the fade_in/out animations
+         * provided by the framework.
+         */
+        Animation in = AnimationUtils.loadAnimation(this,
+                android.R.anim.fade_in);
+        Animation out = AnimationUtils.loadAnimation(this,
+                android.R.anim.fade_out);
+        textSwitcher.setInAnimation(in);
+        textSwitcher.setOutAnimation(out);
+        // END_INCLUDE(setup)
+
+        textSwitcher.setCurrentText("55.0 Kg");
 
         htSpin = (Spinner) findViewById(R.id.htSpinner);
         //designated height range values to fill in the HtSpinner.
-        String strArray[] = {"Select Height","4'0\"","4'1\"","4'2\"","4'3\"","4'4\"","4'5\"","4'6\"","4'7\"","4'8\"","4'9\"","4'10\"","4'11\""
+        /*String strArray[] = {"Select Height","4'0\"","4'1\"","4'2\"","4'3\"","4'4\"","4'5\"","4'6\"","4'7\"","4'8\"","4'9\"","4'10\"","4'11\""
                 ,"5'0\"","5'1\"","5'2\"","5'3\"","5'4\"","5'5\"","5'6\"","5'7\"","5'8\"","5'9\"","5'10\"","5'11\""
                 ,"6'0\"","6'1\"","6'2\"","6'3\"","6'4\"","6'5\"","6'6\"","6'7\"","6'8\"","6'9\"","6'10\"","6'11\""
-                ,"7'0\"","7'1\"","7'2\""};
+                ,"7'0\"","7'1\"","7'2\""};*/
+        String strArray[] = getResources().getStringArray(R.array.ht_values);
 
         List<String> HtData = new ArrayList<String>(Arrays.asList(strArray));
 
         ArrayAdapter<String> htAdapter = new ArrayAdapter<String>(getApplicationContext(),R.layout.layout_ht_spinner,R.id.layout_ht_spinner_textView,HtData);
         htSpin.setAdapter(htAdapter);
+        //TODO below onItemSelectListener is provoked as the view is started, why?
         htSpin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 htValue = findHtBySpinnerPosition(position);
-                htSet = true;
+                if(position>0){
+                    htSet = true;
+                }
                 checkValuesSelectedState();
             }
 
@@ -100,7 +144,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 double wt = findWtBySeekBarProgress(progress);
-                textViewWTIndicator.setText(wt+" Kg");
+                textSwitcher.setText(wt+" Kg");
                 wtSet = true;
                 checkValuesSelectedState();
             }
@@ -116,21 +160,31 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        //loading the FAB Roll from Down Animation below. used at the value checking function.
+        fabRollFromDownAnimation = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.fab_animator);
+        fabByeAnimation = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.fab_bye_animator);
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setEnabled(false); //making the initial disabled state of FAB button.
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.v(TAG, "FAB button clicked with all inputs properly selected. moving for further HTTPRequest.");
-                connect(htValue, findWtBySeekBarProgress(wtBar.getProgress()));
-/*                Snackbar.make(view,"Height value Obtained : "+htValue+" || Weight Value Obtained : "+findWtBySeekBarProgress(wtBar.getProgress()),Snackbar.LENGTH_INDEFINITE)
-                        .setAction("Dismiss", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                //Do nothing.
-                            }
-                        }).show();*/
-                            }
+                if (checkNetworkConnection(view)) {
+                    fab.startAnimation(fabByeAnimation);
+
+                    //fab.hide();
+                    connectRun = new Runnable() {
+                        @Override
+                        public void run() {
+                            fab.setVisibility(View.GONE);
+                            connect(htValue, findWtBySeekBarProgress(wtBar.getProgress()));
+
+                        }
+                    };
+                    connectHandler.postDelayed(connectRun,600);
+
+                }
+            }
         });
         checkValuesSelectedState();
 
@@ -142,6 +196,10 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        Toast.makeText(getApplicationContext(),"Select Height & Weight",Toast.LENGTH_SHORT).show();
+
+
     }
 
     @Override
@@ -171,6 +229,7 @@ public class MainActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Toast.makeText(getApplicationContext(),"Settings Menu Item Selected.",Toast.LENGTH_SHORT).show();
+            shareOnFb(getResources().getString(R.string.API_home_page_url));
             return true;
         }
 
@@ -186,18 +245,14 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_cluster) {
             Toast.makeText(getApplicationContext(),"Cluster Drawer Item Selected.",Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_gitfork) {
-            Toast.makeText(getApplicationContext(),"GitFork Drawer Item Selected.",Toast.LENGTH_SHORT).show();
-            Toast.makeText(getApplicationContext(),"API Link Drawer Item Selected.",Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("http://whatru-svietacm.rhcloud.com"));
+                    Uri.parse("https://github.com/anuragkumarak95/GenPredict-Project/"));
             startActivity(intent);
         } else if (id == R.id.nav_api) {
-            Toast.makeText(getApplicationContext(),"API Link Drawer Item Selected.",Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(Intent.ACTION_VIEW,
                     Uri.parse("http://whatru-svietacm.rhcloud.com"));
             startActivity(intent);
         } else if (id == R.id.nav_about) {
-            Toast.makeText(getApplicationContext(),"Developer site Drawer Item Selected.",Toast.LENGTH_SHORT).show();
 
             Intent intent = new Intent(Intent.ACTION_VIEW,
                     Uri.parse("http://"+getResources().getString(R.string.web_add)));
@@ -247,7 +302,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.v(TAG, "Unsuccessful Response Gathering.");
-
+                fab.setVisibility(View.VISIBLE);
+                fab.startAnimation(fabRollFromDownAnimation);
                 // Hide Progress Dialog
                 prgDialog.hide();
                 // When Http response code is '404'
@@ -275,7 +331,7 @@ public class MainActivity extends AppCompatActivity
         bundle.putString("hi","hi there fellows...!!");
         bundle.putString("gender",gender);
         bundle.putDouble("ht",ht);
-        bundle.putDouble("wt",wt);
+        bundle.putDouble("wt", wt);
         bundle.putDouble("accuracy", accuracy);
         Intent intent = new Intent(MainActivity.this,ResultActivity.class);
         intent.putExtras(bundle);
@@ -301,18 +357,94 @@ public class MainActivity extends AppCompatActivity
 
     private void checkValuesSelectedState(){
         if(!fab.isEnabled()) {
-            if (htSet && wtSet) {
+            if (htSet==true && wtSet==true) {
+                fab.show();
+                fab.startAnimation(fabRollFromDownAnimation);
+
                 fab.setEnabled(true);
-                fab.setBackgroundTintList(getResources().getColorStateList(R.color.fab_enabled));
+
                 Log.d(TAG, "FAB button functionality enabled.");
             } else {
-
+                fab.hide();
                 fab.setEnabled(false);
-                fab.setBackgroundTintList(getResources().getColorStateList(R.color.fab_disabled));
-
 
             }
         }
     }
 
+    //function: Share the API home page on FB (Intent).
+    private void shareOnFb(String urlToShare){
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        // intent.putExtra(Intent.EXTRA_SUBJECT, "Foo bar"); // NB: has no effect!
+        intent.putExtra(Intent.EXTRA_TEXT, urlToShare);
+
+        // See if official Facebook app is found
+        boolean facebookAppFound = false;
+        List<ResolveInfo> matches = getPackageManager().queryIntentActivities(intent, 0);
+        for (ResolveInfo info : matches) {
+            if (info.activityInfo.packageName.toLowerCase().startsWith("com.facebook.katana")) {
+                intent.setPackage(info.activityInfo.packageName);
+                facebookAppFound = true;
+                break;
+            }
+        }
+
+        // As fallback, launch sharer.php in a browser
+        if (!facebookAppFound) {
+            String sharerUrl = "https://www.facebook.com/sharer/sharer.php?u=" + urlToShare;
+            intent = new Intent(Intent.ACTION_VIEW, Uri.parse(sharerUrl));
+        }
+
+        startActivity(intent);
+    }
+
+
+    /**
+     * Check whether the device is connected, and if so, whether the connection
+     * is wifi or mobile (it could be something else).
+     */
+    private boolean checkNetworkConnection(View view) {
+        // BEGIN_INCLUDE(connect)
+        ConnectivityManager connMgr =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeInfo = connMgr.getActiveNetworkInfo();
+        if (activeInfo != null && activeInfo.isConnected()) {
+            wifiConnected = activeInfo.getType() == ConnectivityManager.TYPE_WIFI;
+            mobileConnected = activeInfo.getType() == ConnectivityManager.TYPE_MOBILE;
+            if(wifiConnected) {
+                Log.i(TAG, getString(R.string.wifi_connection));
+            } else if (mobileConnected){
+                Log.i(TAG, getString(R.string.mobile_connection));
+            }
+            return true;
+        } else {
+            Log.i(TAG, getString(R.string.no_wifi_or_mobile));
+            Snackbar.make(view,getString(R.string.no_wifi_or_mobile),Snackbar.LENGTH_LONG).show();
+            return false;
+        }
+        // END_INCLUDE(connect)
+    }
+
+    // BEGIN_INCLUDE(factory)
+    /**
+     * The {@link android.widget.ViewSwitcher.ViewFactory} used to create {@link android.widget.TextView}s that the
+     * {@link android.widget.TextSwitcher} will switch between.
+     */
+    private ViewSwitcher.ViewFactory mFactory = new ViewSwitcher.ViewFactory() {
+
+        @Override
+        public View makeView() {
+
+            // Create a new TextView
+            TextView wtTextView = new TextView(MainActivity.this);
+            wtTextView.setGravity(Gravity.CENTER);
+            wtTextView.setPadding(0,50,10,0);
+            wtTextView.setTextAppearance(MainActivity.this, android.R.style.TextAppearance_Small);
+            return wtTextView;
+        }
+    };
+    // END_INCLUDE(factory)
 }
+
+

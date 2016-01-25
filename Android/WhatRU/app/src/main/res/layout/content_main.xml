@@ -66,6 +66,7 @@
 
                 <LinearLayout
                     android:orientation="horizontal"
+                    android:id="@+id/wtView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
                     <SeekBar
@@ -79,19 +80,15 @@
                         android:longClickable="false"
                         android:indeterminateOnly="false"
                         android:indeterminate="false" />
-                    <TextView
+
+                    <TextSwitcher
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:text="55 Kg"
-                        android:layout_weight="1"
-                        android:id="@+id/textViewWTIndicator"
-                        android:paddingTop="20dp" />
+                        android:id="@+id/wttSwitcher" />
 
                 </LinearLayout>
         </LinearLayout>
     </android.support.v7.widget.CardView>
-
 
 
 </LinearLayout>

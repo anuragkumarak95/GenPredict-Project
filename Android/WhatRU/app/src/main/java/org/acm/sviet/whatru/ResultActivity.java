@@ -2,11 +2,15 @@ package org.acm.sviet.whatru;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,6 +21,8 @@ import com.loopj.android.http.RequestParams;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import cz.msebera.android.httpclient.Header;
@@ -26,10 +32,11 @@ public class ResultActivity extends AppCompatActivity {
     * -> Replace Gender TextView with an imageView and appropriately assign gender images to it.
     * */
 
-    private TextView textViewgender;
+    private ImageView imageViewgender;
     private TextView textViewtrue;
     private TextView textViewfalse;
     private String curr_gender;
+    private InputStream imageInput;
     private final String TAG = "[ResultActivity]";
 
     private ProgressDialog prgDialog=null;
@@ -44,9 +51,11 @@ public class ResultActivity extends AppCompatActivity {
         prgDialog.setMessage("I'll remember this forever...");
         prgDialog.setCancelable(false);
 
-        textViewgender = (TextView) findViewById(R.id.textViewgender);
+        imageViewgender = (ImageView) findViewById(R.id.imageViewgender);
         textViewtrue =(TextView) findViewById(R.id.textViewtrue);
         textViewfalse = (TextView) findViewById(R.id.textViewfalse);
+
+
 
 
         final Bundle bundle = getIntent().getExtras();
@@ -55,7 +64,11 @@ public class ResultActivity extends AppCompatActivity {
         View view = findViewById(R.id.resultActlinearLayout);
 
 
-        TFbackgroundFill(curr_gender); // used for dynamically coloring the T/F buttons according to current gender value provided.
+        try {
+            TFbackgroundFill(curr_gender); // used for dynamically coloring the T/F buttons according to current gender value provided.
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         Snackbar.make(view,"This App is on it's Learning phase and can predict wrong value.",Snackbar.LENGTH_INDEFINITE)
                 .setAction("Dismiss", new View.OnClickListener() {
@@ -66,13 +79,12 @@ public class ResultActivity extends AppCompatActivity {
                 })
                 .setActionTextColor(getResources().getColor(R.color.male_color)).show();
 
-        Toast.makeText(getApplicationContext(),curr_gender
+        /*Toast.makeText(getApplicationContext(),curr_gender
                 +" || ht : "+bundle.getDouble("ht")+" || wt : "+bundle.getDouble("wt")
                 +" || accuracy : "+bundle.getDouble("accuracy"),Toast.LENGTH_LONG).show();
+*/
 
         //click events below..
-
-
         textViewtrue.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -100,20 +112,22 @@ public class ResultActivity extends AppCompatActivity {
 
 
     //function : true false scenario shift color cording to the gender.
-    private void TFbackgroundFill(String curr_gender){
+    private void TFbackgroundFill(String curr_gender) throws IOException {
         if(curr_gender.equals("M")){
-            textViewgender.setText("Abh to Ladka hai...");
             Log.v(TAG,"Male gender value detected.");
+            imageInput = getAssets().open("images/male_symbol.png");
             textViewtrue.setBackgroundColor(getResources().getColor(R.color.male_color));
             textViewfalse.setBackgroundColor(getResources().getColor(R.color.female_color));
             // code the true scenario where male gender is predicted
         }else if(curr_gender.equals("F")){
-            textViewgender.setText("Abh to Ladki hai...");
             Log.v(TAG,"Female gender value detected.");
+            imageInput = getAssets().open("images/female_symbol.png");
             textViewtrue.setBackgroundColor(getResources().getColor(R.color.female_color));
             textViewfalse.setBackgroundColor(getResources().getColor(R.color.male_color));
             // code the true scenario where female gender is predicted
         }
+        Bitmap imageBitmap = BitmapFactory.decodeStream(imageInput);
+        imageViewgender.setImageBitmap(imageBitmap);
     }
 
     //function : upload the gathers value for both true and false prediction scenarios for expanding the data set.
