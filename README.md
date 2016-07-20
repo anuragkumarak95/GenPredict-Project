@@ -1,7 +1,7 @@
 # GenPredict-Project
 
 ##Project-WhatRU :
-An android project that predicts the gender of the user by asking their height and weight.(Uses Machine Learning through K-Mapping Cluster Algorithm)
+An android project that predicts the gender of the user by asking their height and weight.(Uses simplified K-Mean Clustering technique)
 ***
 Environment : Android Studio and Eclipse
 ***
